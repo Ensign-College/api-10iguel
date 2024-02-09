@@ -41,7 +41,6 @@ app.post("/boxes", async (req, res )=>{
         const newBox = req.body;
         newBox.id =  await redisClient.json.arrLen('boxes','$') +1;
         await redisClient.json.arrAppend('boxes','$',{newBox})
-    console.log([newBox])
         res.json({ message: "Box added successfully", newBox });
     let boxes = await redisClient.json.get('boxes',{
         path: '$' //$ to get the whole object    $.name
