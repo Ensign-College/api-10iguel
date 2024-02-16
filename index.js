@@ -3,6 +3,9 @@
 const express = require("express")
 const Redis = require("redis")
 const bodyParser = require("body-parser")
+const paymentRoute = require("./routes/payment")
+
+
 const redisClient = Redis.createClient(
     {url : `redis://localhost:6379`}
 );
@@ -48,6 +51,84 @@ app.post("/boxes", async (req, res )=>{
     console.log("These are the updated boxes"+ [JSON.stringify(boxes)])
 })
 
+app.get("/payments", async (req,res,next) =>{
+    let payments = await redisClient.json.get('payments',{
+        path: '$' //$ to get the whole object    $.name
+    })
+    res.json(payments[0])
+    console.log(payments)
+
+})
+
+app.get('/payments/:customerId?', async (req, res) => {
+    try {
+        const { customerId } = req.params;
+
+        if (customerId) {
+            // Search for all payment keys that correspond to the provided customerId
+            const paymentKey = await redisClient.keys('payment_*');
+            const payments = [];
+
+            for (const key of paymentKey) {
+                const payment = await redisClient.json.get(key, { path: '.' });
+                if (payment.customerId === customerId) {
+                    payments.push(payment);
+                }
+            }
+
+            if (payments.length > 0) {
+                res.status(200).json(payments);
+            } else {
+                res.status(404).json({ error: 'No payments found for the given customer ID' });
+            }
+        } else {
+            // No customerId provided, retrieve all payments
+            const paymentKey = await redisClient.keys('payment_*');
+            const allPayments = [];
+
+            for (const key of paymentKey) {
+                const payment = await redisClient.json.get(key, { path: '.' });
+                allPayments.push(payment);
+            }
+
+            res.status(200).json(allPayments);
+        }
+    } catch (error) {
+        console.error('Error retrieving payments from Redis:', error);
+        res.status(500).json({ error: 'Error retrieving payments from Redis', details: error.message });
+    }
+});
+
+
+app.post ("/payments",async (req,res,next) =>{
+    try {
+        const {
+            customerId, billingAddress, billingCity,
+            billingState, billingZipCode, totalAmount, paymentId,
+            cardId, cardType, last4digits, orderId
+        } = req.body;
+
+        const payment = {
+            customerId, billingAddress, billingCity,
+            billingState, billingZipCode, totalAmount, paymentId,
+            cardId, cardType, last4digits, orderId
+        }
+
+        const paymentKey = `payment:${Date.now().toString()}`
+
+        await redisClient.json.set(paymentKey,':', payment);
+
+        res.status(200).json({message: 'Payment successfully stored in Redis'});
+    } catch (error) {
+        console.error('Error storing payment in Redis:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+})
+
+
+
+
+// app.use(paymentRoute)
 app.listen(port,()=>{
     redisClient.connect().then(r => {
         console.log("It works")
