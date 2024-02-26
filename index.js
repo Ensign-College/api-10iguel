@@ -40,6 +40,18 @@ app.get("/boxes", async (req, res, next)=>{
     console.log(boxes)
 })
 
+//Orders
+
+app.post("/orders", async (req, res, next)=>{
+    let order = req.body;
+
+})
+
+
+
+
+
+
 app.get("/bestPlayers", async (req, res, next)=>{
     // let bestPlayers = await redisClient.json.get('bestPlayers',{
     //     path: '$' //$ to get the whole object    $.name
@@ -61,13 +73,10 @@ app.post("/bestPlayers", async (req, res, next)=>{
     const value = {
         name, country, club
     }
-    //console.log(JSON.stringify(value, null, 2))
-
     await redisClient.json.set("bestPlayers","$", JSON.stringify(value))
     let userSession = await redisClient.hGetAll('bestPlayers');
     // res.json(bestPlayers[0])
     res.json({message : "Successful, You are the best"})
-    //console.log("Look here")
 })
 
 
@@ -92,38 +101,18 @@ app.get("/payments", async (req,res,next) =>{
 
 app.get('/payments/:customerId?', async (req, res) => {
     try {
+
         const { customerId } = req.params;
-
-        if (customerId) {
-            const paymentKey = await redisClient.keys('payment_*');
-            const payments = [];
-
-            for (const key of paymentKey) {
-                const payment = await redisClient.json.get(key, { path: '.' });
-                if (payment.customerId === customerId) {
-                    payments.push(payment);
-                }
-            }
-
-            if (payments.length > 0) {
-                res.status(200).json(payments);
-            } else {
-                res.status(404).json({ error: 'No payments found for the given customer ID' });
-            }
+        const paymentKey = `payments:${customerId}`;
+        const payment = await redisClient.json.get(paymentKey);
+        if (payment) {
+            res.json(payment);
         } else {
-            const paymentKey = await redisClient.keys('payment_*');
-            const allPayments = [];
-
-            for (const key of paymentKey) {
-                const payment = await redisClient.json.get(key, { path: '.' });
-                allPayments.push(payment);
-            }
-
-            res.status(200).json(allPayments);
+            res.status(404).json({ error: 'Payment not found' });
         }
     } catch (error) {
         console.error('Error from Redis:', error);
-        res.status(500).json({ error: 'Error retrieving payments ', message: error.message });
+        res.status(500).json({ error: 'Error retrieving payments', message: error.message });
     }
 });
 
@@ -142,7 +131,7 @@ app.post ("/payments",async (req,res,next) =>{
             cardId, cardType, last4digits, orderId
         }
 
-        const paymentKey = `payment:${Date.now().toString()}`
+        const paymentKey = `payments:${Date.now().toString()}`
 
         await redisClient.json.set(paymentKey,'.', payment);
 
