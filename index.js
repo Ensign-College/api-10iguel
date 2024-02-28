@@ -5,9 +5,9 @@ const Redis = require("redis")
 const bodyParser = require("body-parser")
 const paymentRoute = require("./routes/payment")
 const fs = require("fs")
-const Schema = JSON.parse(fs.readFileSync("./orderItemSchema"))
 const { addOrder, getOrder } = require("./services/orderService.js");
-// const Schema = JSON.parse(fs.readFileSync("./orderItemSchema", "utf-8"))
+const {addOrderItem, getOrderItem} = require("./services/orderItems")
+const Schema = JSON.parse(fs.readFileSync("./orderItemSchema.json", "utf8"));
 const Ajv = require("ajv")
 const ajv = new Ajv()
 const redisClient = Redis.createClient(
@@ -44,37 +44,69 @@ app.get("/boxes", async (req, res, next) => {
     console.log(boxes)
 })
 
-//Orders Endpoint
-
-app.post("/orders", async (req, res, next) => {
+//Orders Endpoints
+app.post("/orders", async (req,res) => {
     let order = req.body;
-    let responseStatus = order.productQuantity ? 200 : 400 && order.ShippingAddress ? 200 : 400;
-    if (responseStatus === 200) {
+    //order details, include product quantity and shipping address
+    let responsestatus = order.productQuantity && order.ShippingAddress ? 200 : 400;
+
+    if (responsestatus === 200) {
         try {
-            // addOrder function to handle order creation in the database
-            await addOrder({ redisClient, order });
+            //addOrder function to handle order creation in the database
+            await addOrder({redisClient,order});
+            res.status(200).json({message: "Order created successfully", order:order});
         } catch (error) {
             console.error(error);
             res.status(500).send("Internal Server Error");
             return;
         }
     } else {
-        res.status(responseStatus);
+        res.status(responsestatus);
         res.send(
-            `Missing one of the following fields: ${exactMatchOrderFields()} ${partiallyMatchOrderFields()}`
+            `Missing one of the following fields ${
+                order.productQuantity ? "" : "productQuantity"
+            } ${order.ShippingAddress ? "" : "ShippingAddress"}`
         );
     }
-    res.status(responseStatus).send();
-})
+    res.status(responsestatus).send();
+});
 
-app.get("/orders/:orderId", async (req, res) => {
-    // get the order from the database
+app.get("/orders/:orderId",async(req, res)=>{
+    //get the order from the database
     const orderId = req.params.orderId;
-    let order = await getOrder({ redisClient, orderId });
+    let order = await getOrder({redisClient,orderId});
     if (order === null) {
         res.status(404).send("Order not found");
     } else {
         res.json(order);
+    }
+});
+
+//Order Items
+app.post("/orderItems", async(req, res)=>{
+    try {
+        console.log("Schema: ", Schema);
+        const validate = ajv.compile(Schema);
+        const valid = validate(req.body);
+        if(!valid){
+            return res.status(400).json({ error: "Invalid request body"});
+        }
+        console.log("Request body: ", req.body);
+
+        //Calling addOrderItem function and storing the result
+        const orderItemId = await addOrderItem({
+            redisClient,
+            orderItem:req.body,
+        });
+
+        //Responsing with the result
+        res
+            .status(201)
+            .json({orderItemId, message: "Order item added successfully"});
+    } catch (error) {
+        console.error("Error adding order item: ", error);
+        res.status(500).json({error:"Internal Server Error"});
+
     }
 });
 

@@ -1,7 +1,10 @@
 {
   "type": "object",
   "properties": {
-    "ShipmentAddress": { "type": "string" }
+    "orderId": { "type": "string" },
+    "productId": { "type": "string" },
+    "quantity": { "type": "integer" },
+    "customerId":{"type": "string"}
   },
-  "required": ["ShipmentAddress"]
+  "required": [ "customerId", "orderId", "productId", "quantity" ]
 }
