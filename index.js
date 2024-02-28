@@ -5,6 +5,8 @@ const Redis = require("redis")
 const bodyParser = require("body-parser")
 const paymentRoute = require("./routes/payment")
 const fs = require("fs")
+const Schema = JSON.parse(fs.readFileSync("./orderItemSchema"))
+const { addOrder, getOrder } = require("./services/orderService.js");
 // const Schema = JSON.parse(fs.readFileSync("./orderItemSchema", "utf-8"))
 const Ajv = require("ajv")
 const ajv = new Ajv()
@@ -42,26 +44,39 @@ app.get("/boxes", async (req, res, next) => {
     console.log(boxes)
 })
 
-//Orders
+//Orders Endpoint
 
 app.post("/orders", async (req, res, next) => {
     let order = req.body;
     let responseStatus = order.productQuantity ? 200 : 400 && order.ShippingAddress ? 200 : 400;
     if (responseStatus === 200) {
         try {
-            //await addOrder({redisClient, order})
+            // addOrder function to handle order creation in the database
+            await addOrder({ redisClient, order });
         } catch (error) {
-            res.status(500).send("Internal Server Error")
+            console.error(error);
+            res.status(500).send("Internal Server Error");
             return;
         }
     } else {
-        res.status(responseStatus)
-        // res.send(`
-        // missing one of the fields: ${exactMatchFields()} ${partiallyMatchOrderFields}`)
+        res.status(responseStatus);
+        res.send(
+            `Missing one of the following fields: ${exactMatchOrderFields()} ${partiallyMatchOrderFields()}`
+        );
     }
-
+    res.status(responseStatus).send();
 })
 
+app.get("/orders/:orderId", async (req, res) => {
+    // get the order from the database
+    const orderId = req.params.orderId;
+    let order = await getOrder({ redisClient, orderId });
+    if (order === null) {
+        res.status(404).send("Order not found");
+    } else {
+        res.json(order);
+    }
+});
 
 app.get("/bestPlayers", async (req, res, next) => {
     // let bestPlayers = await redisClient.json.get('bestPlayers',{

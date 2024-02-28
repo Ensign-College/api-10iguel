@@ -1,0 +1,7 @@
+{
+  "type": "object",
+  "properties": {
+    "ShipmentAddress": { "type": "string" }
+  },
+  "required": ["ShipmentAddress"]
+}
