@@ -208,7 +208,7 @@ app.post("/payments", async (req, res, next) => {
             cardId, cardType, last4digits, orderId
         }
 
-        const paymentKey = `payments:${Date.now().toString()}`
+        const paymentKey = `payments:${customerId}-${Date.now().toString()}`
 
         await redisClient.json.set(paymentKey, '.', payment);
 
