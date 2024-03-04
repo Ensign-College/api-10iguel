@@ -30,13 +30,19 @@ app.use(express.json())
 
 app.use(cors(options))
 
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'privatekey, Origin, X-Requested-With, Content-Type, Accept');
+    next();
+});
+
 app.use(bodyParser.json());
 
 app.get("/", async (req, res, next) => {
     res.send("Hello World")
 })
 
-app.get("/boxes", async (req, res, next) => {
+app.get("/boxes", async (req    , res, next) => {
     let boxes = await redisClient.json.get('boxes', {
         path: '$' //$ to get the whole object    $.name
     })
@@ -176,11 +182,11 @@ app.get("/payments", async (req, res, next) => {
 
 })
 
-app.get('/payments/:customerId?', async (req, res) => {
+app.get('/payments/:paymentId?', async (req, res) => {
     try {
 
-        const {customerId} = req.params;
-        const paymentKey = `payments:${customerId}`;
+        const {paymentId} = req.params;
+        const paymentKey = `payments:${paymentId}`;
         const payment = await redisClient.json.get(paymentKey);
         if (payment) {
             res.json(payment);
