@@ -38,7 +38,7 @@ app.use((req, res, next) => {
 
 app.use(bodyParser.json());
 
-app.get("/", async (req, res, next) => {
+app.get("/recipes", async (req, res, next) => {
     res.send("Hello World")
 })
 
