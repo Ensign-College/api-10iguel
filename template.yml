@@ -1,24 +1,106 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Transform: 'AWS::Serverless-2016-10-31'
+Transform: AWS::Serverless-2016-10-31
 
 Resources:
-  #  MyLambdaFunction:
-  #    Type: 'AWS::Serverless::Function'
-  #    Properties:
-  #      Handler: index.handler
-  #      Runtime: nodejs14.x
-  #      CodeUri: ./lambda
-  #      MemorySize: 128
-  #      Timeout: 30
-  #      Environment:
-  #        Variables:
-  #          REDIS_HOST: !GetAtt MyElasticacheRedis.RedisEndpointAddress
-  #      Events:
-  #        MyApi:
-  #          Type: Api
-  #          Properties:
-  #            Path: /myendpoint
-  #            Method: get
+  ApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: index.ordersHandler
+      Runtime: nodejs20.x
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /orders
+            Method: post
+
+  OrderItemsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: index.orderItemsHandler
+      Runtime: nodejs20.x
+      Events:
+        OrderItemsApiEvent:
+          Type: Api
+          Properties:
+            Path: /orderItems
+            Method: post
+
+  OrdersByIdFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: index.ordersByIdHandler
+      Runtime: nodejs20.x
+      Events:
+        OrdersByIdApiEvent:
+          Type: Api
+          Properties:
+            Path: /orders/{orderId}
+            Method: get
+
+  BoxesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: index.boxesHandler
+      Runtime: nodejs20.x
+      Events:
+        BoxesApiEvent:
+          Type: Api
+          Properties:
+            Path: /boxes
+            Method: get
+  PaymentsFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: index.paymentsHandler
+      Runtime: nodejs14.x
+      CodeUri: .
+      MemorySize: 128
+      Timeout: 30
+      Environment:
+        Variables:
+          REDIS_ENDPOINT: YOUR_REDIS_ENDPOINT
+      Events:
+        GetPayments:
+          Type: Api
+          Properties:
+            Path: /payments
+            Method: get
+        GetPaymentById:
+          Type: Api
+          Properties:
+            Path: /payments/{paymentId}
+            Method: get
+        PostPayments:
+          Type: Api
+          Properties:
+            Path: /payments
+            Method: post
+
+
+
+  # # Add IAM roles with required tag permissions
+  # OrderItemsFunctionRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     RoleName: MyOrderItemsFunctionRole
+  #     AssumeRolePolicyDocument:
+  #       Version: '2012-10-17'
+  #       Statement:
+  #         - Effect: Allow
+  #           Principal:
+  #             Service: lambda.amazonaws.com
+  #           Action: sts:AssumeRole
+  #     ManagedPolicyArns:
+  #       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  #     Tags:
+  #       - Key: MyTag
+  #         Value: MyValue
+
 
   MyVPC:
     Type: AWS::EC2::VPC
@@ -59,9 +141,3 @@ Resources:
           FromPort: 6379
           ToPort: 6379
           CidrIp: 0.0.0.0/0
-
-#Outputs:
-#  MyApiEndpoint:
-#    Description: "API Gateway endpoint URL"
-#    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/myendpoint"
-#  RedisEndpoint: Description: "ElastiCache Redis Endpoint" Value: !GetAtt MyElasticacheRedis.ConfigurationEndpoint.Address
