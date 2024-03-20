@@ -35,7 +35,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Security group for Lambda function
-      VpcId: vpc-0fe47df0813c5367e
+      VpcId: vpc-0a08431f617038881
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 6379
