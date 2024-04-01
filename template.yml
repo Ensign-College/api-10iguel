@@ -36,6 +36,9 @@ Resources:
       Handler: getPaymentHandler
       Runtime: nodejs20.x
       CodeUri: .
+      Environment:
+        Variables:
+          REDIS_HOST: !GetAtt MyElasticacheRedis.RedisEndpoint.Address
       Events:
         GetPayment:
           Type: Api
@@ -50,6 +53,9 @@ Resources:
       Handler: getPaymentsPerCustomerHandler
       Runtime: nodejs20.x
       CodeUri: .
+      Environment:
+        Variables:
+          REDIS_HOST: !GetAtt MyElasticacheRedis.RedisEndpoint.Address
       Events:
         GetPaymentsPerCustomer:
           Type: Api
@@ -64,6 +70,9 @@ Resources:
       Handler: addOrderHandler
       Runtime: nodejs20.x
       CodeUri: .
+      Environment:
+        Variables:
+          REDIS_HOST: !GetAtt MyElasticacheRedis.RedisEndpoint.Address
       Events:
         AddOrder:
           Type: Api
@@ -78,6 +87,9 @@ Resources:
       Handler: getOrderHandler
       Runtime: nodejs20.x
       CodeUri: .
+      Environment:
+        Variables:
+          REDIS_HOST: !GetAtt MyElasticacheRedis.RedisEndpoint.Address
       Events:
         GetOrder:
           Type: Api
@@ -92,6 +104,9 @@ Resources:
       Handler: addOrderItemHandler
       Runtime: nodejs20.x
       CodeUri: .
+      Environment:
+        Variables:
+          REDIS_HOST: !GetAtt MyElasticacheRedis.RedisEndpoint.Address
       Events:
         AddOrderItem:
           Type: Api

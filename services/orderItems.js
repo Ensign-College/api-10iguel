@@ -3,11 +3,12 @@ const Redis = require("redis");
 
 // Create Redis client
 const redisClient = Redis.createClient({
-    url: "redis://localhost:6379",
+    url: `redis://${process.env.REDIS_HOST}:6379`
 });
 
 // Function to add an order item to Redis
 const addOrderItem = async ({ redisClient, orderItem }) => {
+    redisClient.connect();
     try {
         // Create unique key for order item
         const orderItemId = `${orderItem.customerId}-${Date.now()}`;

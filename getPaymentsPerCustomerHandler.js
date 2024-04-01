@@ -1,10 +1,11 @@
 const Redis = require('redis');
 
 const redisClient = Redis.createClient({
-    url: `redis://localhost:6379`
+    url: `redis://${process.env.REDIS_HOST}:6379`
 });
 
 exports.getPaymentsPerCustomerHandler = async (event, context) => {
+    redisClient.connect();
     try {
         const customerId = event.pathParameters.customerId;
 

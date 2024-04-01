@@ -1,5 +1,4 @@
 const Redis = require('redis');
-const { v4: uuidv4 } = require('uuid');
 const { addOrder, getOrder } = require("./services/orderservice.js");
 const { addOrderItem, getOrderItem } = require("./services/orderItems");
 const fs = require("fs");
@@ -7,7 +6,7 @@ const Schema = JSON.parse(fs.readFileSync("./orderItemSchema.json", "utf8"));
 const Ajv = require("ajv");
 const ajv = new Ajv();
 const redisClient = Redis.createClient({
-    url: `redis://localhost:6379`
+    url: `redis://${process.env.REDIS_HOST}:6379`
 });
 
 // Function to handle POST requests for adding boxes
@@ -272,16 +271,4 @@ exports.addOrderItemHandler = async (event, context) => {
 // Don't forget to close Redis connection after usage
 const closeRedisConnection = () => {
     redisClient.quit();
-};
-
-// Exporting functions
-module.exports = {
-    addBoxHandler,
-    getBoxesHandler,
-    sendPaymentHandler,
-    getPaymentHandler,
-    getPaymentsPerCustomerHandler,
-    addOrderHandler,
-    getOrderHandler,
-    addOrderItemHandler
 };
