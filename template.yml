@@ -2,6 +2,20 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
 
 Resources:
+  MiguelLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: MiguelLambdaRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
 #  MyVPC:
 #    Type: AWS::EC2::VPC
 #    Properties:
@@ -52,21 +66,6 @@ Resources:
             Path: /payments
             Method: get
       Role: !Ref MiguelLambdaRole
-
-    MiguelLambdaRole:
-      Type: 'AWS::IAM::Role'
-      Properties:
-        RoleName: MiguelLambdaRole
-        AssumeRolePolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-            - Effect: Allow
-              Principal:
-                Service: lambda.amazonaws.com
-              Action: sts:AssumeRole
-        ManagedPolicyArns:
-          - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-          - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
 
   # Function to handle GET requests for payments per customer
 #  GetPaymentsPerCustomerFunction:
