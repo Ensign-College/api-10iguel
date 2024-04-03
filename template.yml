@@ -39,6 +39,12 @@ Resources:
       Environment:
         Variables:
           REDIS_HOST: !GetAtt MyElasticacheRedis.RedisEndpoint.Address
+          REDIS_PORT: !GetAtt MyElasticacheRedis.RedisEndpoint.Port
+        VpcConfig:
+          SecurityGroupIds:
+            - !GetAtt MySecurityGroup.GroupId
+          SubnetIds:
+            - subnet-02c217f126c0ce1d5
       Events:
         GetPayment:
           Type: Api
