@@ -6,7 +6,7 @@ const redisClient = Redis.createClient({
 });
 
 exports.getOrderHandler = async (event, context) => {
-    redisClient.connect();
+    await redisClient.connect();
     try {
         const orderId = event.pathParameters.orderId;
 

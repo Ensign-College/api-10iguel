@@ -4,31 +4,44 @@ const redisClient = Redis.createClient({
     url: `redis://${process.env.REDIS_HOST}:6379`
 });
 
-exports.getPaymentHandler = async (event, context) => {
-    redisClient.connect();
+exports.getPaymentHandler = async () => {
+    await redisClient.connect();
     try {
-        const paymentId = event.pathParameters.paymentId;
+        const payments = [];
 
-        // Retrieve payment from Redis
-        const paymentKey = `payment-${paymentId}`;
+        const keys = await new Promise((resolve, reject) => {
+            redisClient.keys("payments:*", (err, keys) => {
+                if (err) {
+                    console.error("Error retrieving keys from Redis:", err);
+                    reject(err);
+                    return;
+                }
+                resolve(keys);
+            });
+        });
 
-        const payment = await redisClient.json.get(paymentKey, { path: '.' });
-
-        if (payment) {
-            return {
-                statusCode: 200,
-                body: JSON.stringify(payment)
-            };
-        } else {
-            return {
-                statusCode: 404,
-                body: JSON.stringify({ error: 'Payment not found for the given payment ID' })
-            };
+        for (const key of keys) {
+            const payment = await new Promise((resolve, reject) => {
+                redisClient.json.get(key, (err, payment) => {
+                    if (err) {
+                        console.error("Error retrieving payment from Redis:", err);
+                        reject(err);
+                        return;
+                    }
+                    resolve(payment);
+                });
+            });
+            payments.push(payment);
         }
+        return {
+            statusCode: 200,
+            body: JSON.stringify(payments)
+        };
     } catch (error) {
+        console.error('Error retrieving payments:', error);
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: 'Error retrieving payment from Redis', details: error.message })
+            body: JSON.stringify({error: 'Internal server error'})
         };
     }
 };
