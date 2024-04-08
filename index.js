@@ -5,9 +5,25 @@ const fs = require("fs");
 const Schema = JSON.parse(fs.readFileSync("./orderItemSchema.json", "utf8"));
 const Ajv = require("ajv");
 const ajv = new Ajv();
+// const redisClient = Redis.createClient({
+//     url: `redis://${process.env.REDIS_HOST}:6379`
+// });
+
+const redisHost = process.env.REDIS_HOST;
+const redisPort = process.env.REDIS_PORT;
+
 const redisClient = Redis.createClient({
-    url: `redis://${process.env.REDIS_HOST}:6379`
+    socket: {
+        host: redisHost,
+        port: redisPort
+    },
+    tls: {},
+    ssl: true,
 });
+
+redisClient.on('error', err => console.error('Error de coneccion con ElastiCache:', err));
+
+
 
 // Function to handle POST requests for adding boxes
 exports.addBoxHandler = async (event, context) => {
@@ -48,54 +64,30 @@ exports.getBoxesHandler = async (event, context) => {
 
 // Function to handle POST requests for sending payments
 exports.sendPaymentHandler = async (event, context) => {
+    await redisClient.connect();
     try {
-        const requestBody = JSON.parse(event.body);
-        let {
-            billingAddress,
-            billingCity,
-            billingState,
-            billingZipCode,
-            phone,
-            totalAmount,
-            cardId,
-            cardType,
-            last4digits,
-            orderId
-        } = requestBody;
+        // Parse the request body data
+        const { customerId, billingAddress, billingCity, billingState, billingZipCode, totalAmount, paymentId, cardId, cardType, last4digits, orderId } = JSON.parse(event.body);
 
-        // Reassign customerId to phone number
-        customerId = phone;
-
-        // Generate a unique payment ID using customerId and timestamp
-        const paymentId = `${customerId}-${Date.now().toString()}`;
-
-        // Construct the payment object
+        // Create payment object
         const payment = {
-            customerId,
-            billingAddress,
-            billingCity,
-            billingState,
-            billingZipCode,
-            phone,
-            totalAmount,
-            paymentId,
-            cardId,
-            cardType,
-            last4digits,
-            orderId
+            customerId, billingAddress, billingCity, billingState, billingZipCode, totalAmount, paymentId, cardId, cardType, last4digits, orderId
         };
 
-        // Generate a unique key for the payment using phone and current date
-        const paymentKey = `payment-${paymentId}`;
+        // Generate the key for storing in Redis
+        const paymentKey = `payments:${customerId}-${Date.now().toString()}`;
 
-        // Store the payment information in Redis as a JSON object
+        // Store payment in Redis
         await redisClient.json.set(paymentKey, '.', payment);
 
+        // Respond with success
         return {
             statusCode: 200,
-            body: JSON.stringify({ message: 'Payment successfully stored in Redis' })
+            body: JSON.stringify({ message: 'Payment successfully stored' })
         };
     } catch (error) {
+        // Handle errors
+        console.error('Error storing:', error);
         return {
             statusCode: 500,
             body: JSON.stringify({ error: 'Internal server error' })

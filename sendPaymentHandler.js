@@ -5,7 +5,7 @@ const redisClient = Redis.createClient({
 });
 
 exports.sendPaymentHandler = async (event, context) => {
-    redisClient.connect();
+    await redisClient.connect();
     try {
         const requestBody = JSON.parse(event.body);
         let {

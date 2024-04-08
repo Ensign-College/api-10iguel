@@ -31,20 +31,20 @@ Resources:
           ToPort: 6379
           CidrIp: 0.0.0.0/0  # This allows access from any IP, modify as needed
 
-#  MiguelLambdaRole:
-#    Type: 'AWS::IAM::Role'
-#    Properties:
-#      RoleName: MiguelLambdaRole
-#      AssumeRolePolicyDocument:
-#        Version: '2012-10-17'
-#        Statement:
-#          - Effect: Allow
-#            Principal:
-#              Service: lambda.amazonaws.com
-#            Action: sts:AssumeRole
-#      ManagedPolicyArns:
-#        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-#        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
+  MiguelLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: MiguelLambdaRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
 #  MyVPC:
 #    Type: AWS::EC2::VPC
 #    Properties:
@@ -59,20 +59,29 @@ Resources:
 
 
   # Function to handle POST requests for sending payments
-#  SendPaymentFunction:
-#    Type: 'AWS::Serverless::Function'
-#    Properties:
-#      Handler: sendPaymentHandler
-#      Runtime: nodejs20.x
-#      CodeUri: .
-#      Events:
-#        SendPayment:
-#          Type: Api
-#          Properties:
-#            Path: /payments
-#            Method: post
+  SendPaymentFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: index.sendPaymentHandler
+      Runtime: nodejs20.x
+      CodeUri: .
+      Environment:
+        Variables:
+          REDIS_HOST: !GetAtt MyElasticacheRedis.RedisEndpoint.Address
+          REDIS_PORT: !GetAtt MyElasticacheRedis.RedisEndpoint.Port
+      VpcConfig:
+        SecurityGroupIds:
+          - !GetAtt MySecurityGroup.GroupId
+        SubnetIds:
+          - subnet-02c217f126c0ce1d5
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            Path: /sendPayment
+            Method: post
+      Role: arn:aws:iam::730335528058:role/MiguelLambdaRole
 
-  # Function to handle GET requests for payment by ID
   GetPaymentFunction:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -85,16 +94,16 @@ Resources:
           REDIS_PORT: !GetAtt MyElasticacheRedis.RedisEndpoint.Port
       VpcConfig:
         SecurityGroupIds:
-            - !GetAtt MySecurityGroup.GroupId
+          - !GetAtt MySecurityGroup.GroupId
         SubnetIds:
-            - subnet-02c217f126c0ce1d5
+          - subnet-02c217f126c0ce1d5
       Events:
-        GetPayment:
-          Type: Api
+        HttpApi:
+          Type: HttpApi
           Properties:
             Path: /payments
             Method: get
-#      Role: !Ref MiguelLambdaRole
+      Role: arn:aws:iam::730335528058:role/MiguelLambdaRole
 
   # Function to handle GET requests for payments per customer
 #  GetPaymentsPerCustomerFunction:
