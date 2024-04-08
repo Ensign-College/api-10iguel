@@ -76,9 +76,9 @@ Resources:
   GetPaymentFunction:
     Type: 'AWS::Serverless::Function'
     Properties:
-      Handler: getPaymentHandler
-      Runtime: nodejs20.x
       CodeUri: .
+      Handler: index.getPaymentHandler
+      Runtime: nodejs20.x
       Environment:
         Variables:
           REDIS_HOST: !GetAtt MyElasticacheRedis.RedisEndpoint.Address
