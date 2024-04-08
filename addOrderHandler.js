@@ -1,5 +1,5 @@
 const Redis = require('redis');
-const { addOrder } = require("./services/orderservice.js");
+const { addOrder } = require("./services/orderService.js");
 
 const redisClient = Redis.createClient({
     url: `redis://${process.env.REDIS_HOST}:6379`

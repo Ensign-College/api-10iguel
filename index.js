@@ -1,5 +1,5 @@
 const Redis = require('redis');
-const { addOrder, getOrder } = require("./services/orderservice.js");
+const { addOrder, getOrder } = require("./services/orderService.js");
 const { addOrderItem, getOrderItem } = require("./services/orderItems");
 const fs = require("fs");
 const Schema = JSON.parse(fs.readFileSync("./orderItemSchema.json", "utf8"));
