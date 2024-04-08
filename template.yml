@@ -95,12 +95,6 @@ Resources:
             Path: /payments
             Method: get
       Role: !Ref MiguelLambdaRole
-      Policies:
-        - Statement:
-            - Effect: Allow
-              Action:
-                - kms:Decrypt
-              Resource: "*"
 
   # Function to handle GET requests for payments per customer
 #  GetPaymentsPerCustomerFunction:
