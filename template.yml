@@ -59,35 +59,36 @@ Resources:
 
 
   # Function to handle POST requests for sending payments
-  SendPaymentFunction:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      Handler: index.sendPaymentHandler
-      Runtime: nodejs20.x
-      CodeUri: .
-      Environment:
-        Variables:
-          REDIS_HOST: !GetAtt MyElasticacheRedis.RedisEndpoint.Address
-          REDIS_PORT: !GetAtt MyElasticacheRedis.RedisEndpoint.Port
-      VpcConfig:
-        SecurityGroupIds:
-          - !GetAtt MySecurityGroup.GroupId
-        SubnetIds:
-          - subnet-02c217f126c0ce1d5
-      Events:
-        HttpApi:
-          Type: HttpApi
-          Properties:
-            Path: /sendPayment
-            Method: post
-      Role: arn:aws:iam::730335528058:role/MiguelLambdaRole
+#  SendPaymentFunction:
+#    Type: 'AWS::Serverless::Function'
+#    Properties:
+#      Handler: index.sendPaymentHandler
+#      Runtime: nodejs20.x
+#      CodeUri: .
+#      Environment:
+#        Variables:
+#          REDIS_HOST: !GetAtt MyElasticacheRedis.RedisEndpoint.Address
+#          REDIS_PORT: !GetAtt MyElasticacheRedis.RedisEndpoint.Port
+#      VpcConfig:
+#        SecurityGroupIds:
+#          - !GetAtt MySecurityGroup.GroupId
+#        SubnetIds:
+#          - subnet-02c217f126c0ce1d5
+#      Events:
+#        HttpApi:
+#          Type: HttpApi
+#          Properties:
+#            Path: /sendPayment
+#            Method: post
+#      Role: arn:aws:iam::730335528058:role/MiguelLambdaRole
 
   GetPaymentFunction:
     Type: 'AWS::Serverless::Function'
     Properties:
       CodeUri: .
-      Handler: index.getPaymentHandler
+      Handler: getPaymentHandler.getPaymentHandler
       Runtime: nodejs20.x
+      MemorySize: 256
       Environment:
         Variables:
           REDIS_HOST: !GetAtt MyElasticacheRedis.RedisEndpoint.Address

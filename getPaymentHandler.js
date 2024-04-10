@@ -1,13 +1,25 @@
 const Redis = require('redis');
 
+const redisHost = process.env.REDIS_HOST;
+const redisPort = process.env.REDIS_PORT;
+
 const redisClient = Redis.createClient({
-    url: `redis://${process.env.REDIS_HOST}:6379`
+    socket: {
+        host: redisHost,
+        port: redisPort
+    },
+    tls: {},
+    ssl: true,
 });
 
+redisClient.on('error', err => console.error('Error de conexión con ElastiCache:', err));
+
 exports.getPaymentHandler = async () => {
-    await redisClient.connect();
+
     try {
         const payments = [];
+
+        await redisClient.connect();
 
         const keys = await new Promise((resolve, reject) => {
             redisClient.keys("payments:*", (err, keys) => {
@@ -33,6 +45,13 @@ exports.getPaymentHandler = async () => {
             });
             payments.push(payment);
         }
+
+        if (payments.length === 0) {
+            return {
+                statusCode: 404,
+                body: JSON.stringify({error: 'No payments found'})
+            };
+        }
         return {
             statusCode: 200,
             body: JSON.stringify(payments)
@@ -41,7 +60,9 @@ exports.getPaymentHandler = async () => {
         console.error('Error retrieving payments:', error);
         return {
             statusCode: 500,
-            body: JSON.stringify({error: 'Internal server error'})
+            body: JSON.stringify({error: 'Internal server error', errorDetails: error.message})
         };
+    } finally {
+        await redisClient.quit();
     }
 };
