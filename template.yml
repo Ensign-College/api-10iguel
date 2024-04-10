@@ -2,6 +2,17 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
 
 Resources:
+  #  MyVPC:
+  #    Type: AWS::EC2::VPC
+  #    Properties:
+  #      CidrBlock: 10.0.0.0/16
+  #
+  #  MySubnet:
+  #    Type: AWS::EC2::Subnet
+  #    Properties:
+  #      VpcId: !Ref MyVPC
+  #      CidrBlock: 10.0.0.0/24
+  #
   MyElasticacheSubnetGroup:
     Type: AWS::ElastiCache::SubnetGroup
     Properties:
@@ -29,7 +40,8 @@ Resources:
         - IpProtocol: tcp
           FromPort: 6379
           ToPort: 6379
-          CidrIp: 0.0.0.0/0  # This allows access from any IP, modify as needed
+          CidrIp: 0.0.0.0/0
+    DeletionPolicy: Delete
 
   MiguelLambdaRole:
     Type: 'AWS::IAM::Role'
@@ -45,49 +57,14 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
         - arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole
-#  MyVPC:
-#    Type: AWS::EC2::VPC
-#    Properties:
-#      CidrBlock: 10.0.0.0/16
-#
-#  MySubnet:
-#    Type: AWS::EC2::Subnet
-#    Properties:
-#      VpcId: !Ref MyVPC
-#      CidrBlock: 10.0.0.0/24
-#
-
 
   # Function to handle POST requests for sending payments
-#  SendPaymentFunction:
-#    Type: 'AWS::Serverless::Function'
-#    Properties:
-#      Handler: index.sendPaymentHandler
-#      Runtime: nodejs20.x
-#      CodeUri: .
-#      Environment:
-#        Variables:
-#          REDIS_HOST: !GetAtt MyElasticacheRedis.RedisEndpoint.Address
-#          REDIS_PORT: !GetAtt MyElasticacheRedis.RedisEndpoint.Port
-#      VpcConfig:
-#        SecurityGroupIds:
-#          - !GetAtt MySecurityGroup.GroupId
-#        SubnetIds:
-#          - subnet-02c217f126c0ce1d5
-#      Events:
-#        HttpApi:
-#          Type: HttpApi
-#          Properties:
-#            Path: /sendPayment
-#            Method: post
-#      Role: arn:aws:iam::730335528058:role/MiguelLambdaRole
-
-  GetPaymentFunction:
+  SendPaymentFunction:
     Type: 'AWS::Serverless::Function'
     Properties:
-      CodeUri: .
-      Handler: getPaymentHandler.getPaymentHandler
+      Handler: sendPaymentHandler.sendPaymentHandler
       Runtime: nodejs20.x
+      CodeUri: .
       Timeout: 30
       MemorySize: 256
       Environment:
@@ -103,7 +80,57 @@ Resources:
         HttpApi:
           Type: HttpApi
           Properties:
-            Path: /payments
+            Path: /sendPayment
+            Method: post
+      Role: arn:aws:iam::730335528058:role/MiguelLambdaRole
+
+  GetPaymentFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: getPaymentHandler.getPaymentHandler
+      Runtime: nodejs20.x
+      CodeUri: .
+      Timeout: 30
+      MemorySize: 256
+      Environment:
+        Variables:
+          REDIS_HOST: !GetAtt MyElasticacheRedis.RedisEndpoint.Address
+          REDIS_PORT: !GetAtt MyElasticacheRedis.RedisEndpoint.Port
+      VpcConfig:
+        SecurityGroupIds:
+          - !GetAtt MySecurityGroup.GroupId
+        SubnetIds:
+          - subnet-02c217f126c0ce1d5
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            Path: /getPayment/{paymentId}
+            Method: get
+      Role: arn:aws:iam::730335528058:role/MiguelLambdaRole
+
+  GetPaymentsPerCustomerFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: getPaymentsPerCustomerHandler.getPaymentsPerCustomerHandler
+      Runtime: nodejs20.x
+      CodeUri: .
+      Timeout: 30
+      MemorySize: 256
+      Environment:
+        Variables:
+          REDIS_HOST: !GetAtt MyElasticacheRedis.RedisEndpoint.Address
+          REDIS_PORT: !GetAtt MyElasticacheRedis.RedisEndpoint.Port
+      VpcConfig:
+        SecurityGroupIds:
+          - !GetAtt MySecurityGroup.GroupId
+        SubnetIds:
+          - subnet-02c217f126c0ce1d5
+      Events:
+        HttpApi:
+          Type: HttpApi
+          Properties:
+            Path: /getPaymentsPerCustomer/{customerId}
             Method: get
       Role: arn:aws:iam::730335528058:role/MiguelLambdaRole
 

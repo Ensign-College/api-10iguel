@@ -14,53 +14,35 @@ const redisClient = Redis.createClient({
 
 redisClient.on('error', err => console.error('Error de conexión con ElastiCache:', err));
 
-exports.getPaymentHandler = async () => {
-
+exports.getPaymentHandler = async (event, context) => {
     try {
-        const payments = [];
+        console.log('getPaymentHandler START');
 
         await redisClient.connect();
 
-        const keys = await new Promise((resolve, reject) => {
-            redisClient.keys("payments:*", (err, keys) => {
-                if (err) {
-                    console.error("Error retrieving keys from Redis:", err);
-                    reject(err);
-                    return;
-                }
-                resolve(keys);
-            });
-        });
+        const paymentId = event.pathParameters.paymentId;
 
-        for (const key of keys) {
-            const payment = await new Promise((resolve, reject) => {
-                redisClient.json.get(key, (err, payment) => {
-                    if (err) {
-                        console.error("Error retrieving payment from Redis:", err);
-                        reject(err);
-                        return;
-                    }
-                    resolve(payment);
-                });
-            });
-            payments.push(payment);
-        }
+        const paymentKey = `payment-${paymentId}`;
+        console.log(`getPaymentHandler paymentId: ${paymentId}`);
 
-        if (payments.length === 0) {
+        const payment = await redisClient.json.get(paymentKey, { path: '.' });
+
+        if (payment) {
+            return {
+                statusCode: 200,
+                body: JSON.stringify(payment)
+            };
+        } else {
             return {
                 statusCode: 404,
-                body: JSON.stringify({error: 'No payments found'})
+                body: JSON.stringify({ error: `Payment not found for the given payment ID: ${paymentId}` })
             };
         }
-        return {
-            statusCode: 200,
-            body: JSON.stringify(payments)
-        };
     } catch (error) {
-        console.error('Error retrieving payments:', error);
+        console.error('Unhandled error in getPaymentHandler:', error);
         return {
             statusCode: 500,
-            body: JSON.stringify({error: 'Internal server error', errorDetails: error.message})
+            body: JSON.stringify({ error: 'Error retrieving payment from Redis', details: error.message })
         };
     } finally {
         await redisClient.quit();

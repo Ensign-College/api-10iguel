@@ -1,11 +1,22 @@
 const Redis = require('redis');
 
+const redisHost = process.env.REDIS_HOST;
+const redisPort = process.env.REDIS_PORT;
+
 const redisClient = Redis.createClient({
-    url: `redis://${process.env.REDIS_HOST}:6379`
+    socket: {
+        host: redisHost,
+        port: redisPort
+    },
+    tls: {},
+    ssl: true,
 });
+
+redisClient.on('error', err => console.error('Error de conexión con ElastiCache:', err));
 
 exports.sendPaymentHandler = async (event, context) => {
     await redisClient.connect();
+
     try {
         const requestBody = JSON.parse(event.body);
         let {
@@ -51,12 +62,15 @@ exports.sendPaymentHandler = async (event, context) => {
 
         return {
             statusCode: 200,
-            body: JSON.stringify({ message: 'Payment successfully stored in Redis' })
+            body: JSON.stringify({ message: 'Payment successfully stored in Redis.', paymentId })
         };
     } catch (error) {
+        console.error('Unhandled error in sendPaymentHandler:', error);
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: 'Internal server error' })
+            body: JSON.stringify({ error: 'Error sending payment to Redis', details: error.message })
         };
+    } finally {
+        await redisClient.quit();
     }
 };
